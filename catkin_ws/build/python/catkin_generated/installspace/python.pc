@@ -1,0 +1,8 @@
+prefix=/home/episci/Projects/network_tester/catkin_ws/install
+
+Name: python
+Description: Description of python
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib -lpython
+Requires: rospy

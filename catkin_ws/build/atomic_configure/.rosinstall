@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/episci/Projects/network_tester/catkin_ws/devel/setup.sh
