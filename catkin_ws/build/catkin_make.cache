@@ -1,2 +1,0 @@
-cpp:python
--DCATKIN_DEVEL_PREFIX=/home/episci/Projects/network_tester/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/episci/Projects/network_tester/catkin_ws/install -G Unix Makefiles
