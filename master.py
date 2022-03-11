@@ -73,23 +73,25 @@ class EditWidget(QWidget):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, serverIp, ip, port):
+    def __init__(self, serverIp, ip, port, id, password):
         super(MainWindow, self).__init__()
         self.windowWidth = 920
         self.windowHeight = 900
         self.statusBar().showMessage(
             f"Start time : {QDate.currentDate().toString(Qt.ISODate)} {QTime.currentTime().toString(Qt.DefaultLocaleLongDate)}")
-        self.setCentralWidget(NetworkConfigure(serverIp, ip, port))
+        self.setCentralWidget(NetworkConfigure(serverIp, ip, port, id, password))
         self.setWindowTitle('Network Configure')
         self.setGeometry(50, 50, self.windowWidth, self.windowHeight)
         self.show()
 
 
 class NetworkConfigure(QWidget):
-    def __init__(self, serverIp, ip, port):
+    def __init__(self, serverIp, ip, port, id, password):
         super().__init__()
         self.statusUrl = f"http://{serverIp}/cgi-bin/webif/status-rf.sh"
         self.connectionUrl = f'http://{serverIp}/cgi-bin/webif/getradio.sh'
+        self.session = requests.Session()
+        self.session.auth = (id, password)
         self.lat = 0
         self.lon = 0
 
@@ -174,9 +176,9 @@ class NetworkConfigure(QWidget):
         return self.lat and self.lon
 
     def getGeneralStatus(self):
-        session = requests.Session()
-        session.auth = ("admin", "episci1@")
-        response = session.get(self.statusUrl)
+        # session = requests.Session()
+        # session.auth = ("admin", "episci1@")
+        response = self.session.get(self.statusUrl)
         if response.status_code == 200:
             html = response.text
             soup = BeautifulSoup(html, "html.parser")
@@ -186,9 +188,9 @@ class NetworkConfigure(QWidget):
             print(response.status_code)
 
     def updateConnectionInfo(self):
-        session = requests.Session()
-        session.auth = ("admin", "episci1@")
-        response = session.get(self.connectionUrl)
+        # session = requests.Session()
+        # session.auth = ("admin", "episci1@")
+        response = self.session.get(self.connectionUrl)
         if response.status_code == 200:
             radieInfo = response.text.split("\n")
             trafficStatusValues = radieInfo[0].split(",")
@@ -276,7 +278,9 @@ if __name__ == '__main__':
     parser.add_argument('serverIp', type=str)
     parser.add_argument('ip', type=str)
     parser.add_argument('port', type=int)
+    parser.add_argument('id', type=str)
+    parser.add_argument('password', type=str)
     args = parser.parse_args()
     app = QApplication(sys.argv)
-    widget = MainWindow(args.serverIp, args.ip, args.port)
+    widget = MainWindow(args.serverIp, args.ip, args.port, args.id, args.password)
     sys.exit(app.exec_())

@@ -8,9 +8,11 @@ import argparse
 
 
 class SlaveHandler:
-    def __init__(self, serverIp, ip, port):
+    def __init__(self, serverIp, ip, port, id, password):
         self.connectionUrl = f'http://{serverIp}/cgi-bin/webif/getradio.sh'
         self.statusUrl = f"http://{serverIp}/cgi-bin/webif/status-rf.sh"
+        self.session = requests.Session()
+        self.session.auth = (id, password)
         self.sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
         self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
@@ -25,9 +27,7 @@ class SlaveHandler:
         # self.sock.bind((ip, port))
 
     def getGeneralStatus(self):
-        session = requests.Session()
-        session.auth = ("admin", "episci1@")
-        response = session.get(self.statusUrl)
+        response = self.session.get(self.statusUrl)
         if response.status_code == 200:
             html = response.text
             soup = BeautifulSoup(html, "html.parser")
@@ -37,9 +37,7 @@ class SlaveHandler:
             print(response.status_code)
 
     def getConnectionInfo(self):
-        session = requests.Session()
-        session.auth = ("admin", "episci1@")
-        response = session.get(self.connectionUrl)
+        response = self.session.get(self.connectionUrl)
         if response.status_code == 200:
             return {
                 "sender": self.generalStatus[0].get_text(),
@@ -50,7 +48,7 @@ class SlaveHandler:
 
     def getCurrentPos(self):
         px4_sock = mavutil.mavlink_connection(
-            'udpin:localhost:{}'.format(14540),
+            'udpin:localhost:{}'.format(14551),
             planner_format=False,
             notimestamps=True,
             robust_parsing=True
@@ -82,6 +80,8 @@ if __name__ == '__main__':
     parser.add_argument('serverIp', type=str)
     parser.add_argument('ip', type=str)
     parser.add_argument('port', type=int)
+    parser.add_argument('id', type=str)
+    parser.add_argument('password', type=str)
     args = parser.parse_args()
-    handler = SlaveHandler(args.serverIp, args.ip, args.port)
+    handler = SlaveHandler(args.serverIp, args.ip, args.port, args.id, args.password)
     handler.run()
