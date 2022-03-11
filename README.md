@@ -1,6 +1,8 @@
 # network_tester
 ```sh
-pip3 install pyqt5 requests beautifulsoup4
+#only laptop
+pip3 install pyqt5
+pip3 install requests beautifulsoup4
 ```
 <strong>Make sure that the Laptop and the drone are connected with the microhard</strong>
 
