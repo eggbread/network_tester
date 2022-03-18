@@ -8,6 +8,7 @@ import argparse
 import numbers, math
 import pickle
 from socket import *
+from logger import Logger
 
 
 class MasterHandler(QThread):
@@ -19,7 +20,6 @@ class MasterHandler(QThread):
         self.sock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.sock.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         self.sock.bind((ip, port))
-
     def run(self):
         while True:
             data, arr = self.sock.recvfrom(1024)
@@ -95,6 +95,8 @@ class NetworkConfigure(QWidget):
         self.lat = 0
         self.lon = 0
 
+        self.logger = Logger()
+
         self.receivedBytesLabel = QLabel()
         self.receivePacketsLabel = QLabel()
         self.transmitBytesLabel = QLabel()
@@ -116,7 +118,6 @@ class NetworkConfigure(QWidget):
         self.connectionUpdateTimer.timeout.connect(self.updateConnectionInfo)
         self.updateConnectionInfo()
         self.connectionUpdateTimer.start()
-
     def initUI(self):
         mainLayout = QVBoxLayout()
         statusLayout = QGridLayout()
@@ -209,6 +210,7 @@ class NetworkConfigure(QWidget):
                         for j in range(1, 4):
                             self.connections[str(adjValues[0])][j - 1] = adjValues[j]
                     self.connections[str(adjValues[0])][4].append(int(adjValues[4]))
+            self.logger.writeMessage(self.connections)
             self.updateConnectionTable()
         else:
             print(response.status_code)
@@ -241,28 +243,26 @@ class NetworkConfigure(QWidget):
                         get_harversion_distance(self.lat, self.lon, posLla[0] * 1e-7, posLla[1] * 1e-7)
 
 
-def get_harversion_distance(x1, y1, x2, y2, round_decimal_digits=5):
-    if x1 is None or y1 is None or x2 is None or y2 is None:
+def get_harversion_distance(lat1, lon1, lat2, lon2, round_decimal_digits=1):
+    if lat1 is None or lon1 is None or lat2 is None or lon2 is None:
         return None
-    assert isinstance(x1, numbers.Number) and -180 <= x1 <= 180
-    assert isinstance(y1, numbers.Number) and -90 <= y1 <= 90
-    assert isinstance(x2, numbers.Number) and -180 <= x2 <= 180
-    assert isinstance(y2, numbers.Number) and -90 <= y2 <= 90
+    assert isinstance(lat1, numbers.Number) and -90 <= lat1 <= 90
+    assert isinstance(lat1, numbers.Number) and -90 <= lat1 <= 90
+    assert isinstance(lon2, numbers.Number) and -180 <= lon2 <= 180
+    assert isinstance(lon2, numbers.Number) and -180 <= lon2 <= 180
 
-    R = 6371
-    dLon = degree2radius(x2 - x1)
-    dLat = degree2radius(y2 - y1)
+    R = 6371.0072
 
-    a = math.sin(dLat / 2) * math.sin(dLat / 2) + (math.cos(degree2radius(y1)) \
-                                                   * math.cos(degree2radius(y2)) * math.sin(dLon / 2) * math.sin(
-                dLon / 2))
-    b = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return round(R * b, round_decimal_digits) * 1000
+    dlat = math.radians(lat1 - lat2)
+    dlon = math.radians(lon1 - lon2)
 
+    haversine_dlat = math.sin(dlat / 2.0) ** 2
+    haversine_dlon = math.sin(dlon / 2.0) ** 2
 
-def degree2radius(degree):
-    return degree * (math.pi / 180)
-
+    y = haversine_dlat + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * haversine_dlon
+    x = 2 * math.asin(math.sqrt(y))
+    
+    return round(x * R * 1000, round_decimal_digits)
 
 def check_sits(hostName):
     response = os.system("ping -c 1 " + hostName)
